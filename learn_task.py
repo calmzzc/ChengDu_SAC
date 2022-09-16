@@ -29,7 +29,7 @@ class SACConfig:
         self.env = 'Section8'
         self.result_path = curr_path + "/outputs/" + self.env + '/' + curr_time + '/results/'  # path to save results
         self.model_path = curr_path + "/outputs/" + self.env + '/' + curr_time + '/models/'  # path to save models
-        self.train_eps = 300
+        self.train_eps = 10000
         self.train_steps = 500
         self.eval_eps = 50
         self.eval_steps = 500
@@ -106,7 +106,7 @@ def train(cfg, line, agent, train_model):
         while True:
             i_step += 1
             state_node.get_last_node(node_list)
-            # state_node.state_transition() # 一般动作转移
+            #state_node.state_transition() # 一般动作转移
             state_node.safe_state_transition()  # Shield动作转移
             # state_node.Mcts_State_Transition()  # Shield Mcts动作转移
             total_power = total_power + state_node.t_power + state_node.re_power
@@ -250,7 +250,7 @@ def eval(cfg, line, agent, train_model):
             # state_node = MctsStateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model, parent=None)
             node_list.append(state_node)
         print('回合：{}/{}，奖励：{}, 能耗  {}, 牵引能耗  {}, 最终时间  {}, 最终速度  {}, 不安全次数  {}, 最终位置 {}'.format(i_ep + 1,
-                                                                                                cfg.train_eps,
+                                                                                                cfg.eval_eps,
                                                                                                 np.around(ep_reward[0],
                                                                                                           2),
                                                                                                 np.around(total_power[0],
@@ -279,13 +279,13 @@ def eval(cfg, line, agent, train_model):
 
 if __name__ == "__main__":
     cfg = SACConfig()
-    line, agent, train_model = env_agent_config(cfg, seed=1)
+    line, agent, train_model = env_agent_config(cfg, seed=2)
     t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list = train(cfg, line, agent, train_model)
     make_dir(cfg.result_path, cfg.model_path)
     agent.save(path=cfg.model_path)
     save_results(t_rewards, t_ma_rewards, tag='train', path=cfg.result_path)
     # 测试
-    line, agent, train_mdoel = env_agent_config(cfg, seed=1)
+    line, agent, train_mdoel = env_agent_config(cfg, seed=2)
     agent.load(path=cfg.model_path)
     rewards, ma_rewards, ev_list, et_list, ea_list, eval_ep_list, eacc_list = eval(cfg, line, agent, train_model)
     save_results(rewards, ma_rewards, tag='eval', path=cfg.result_path)

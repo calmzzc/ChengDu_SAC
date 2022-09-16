@@ -7,7 +7,7 @@ class MctsStateNode:
         self.line = line  # 区间
         self.train_model = train_model  # 列车模型
         self.agent = agent  # 神经网络
-        self.ou_noise = ou_noise  # OU噪声
+        # self.ou_noise = ou_noise  # OU噪声
 
         self.state = state  # 当前状态 ,0是时间，1是速度
         self.acc = 0  # 当前合加速度

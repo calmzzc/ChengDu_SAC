@@ -46,7 +46,7 @@ class SAC:
         state = torch.FloatTensor(state).to(self.device)
         next_state = torch.FloatTensor(next_state).to(self.device)
         action = torch.FloatTensor(action).to(self.device)
-        reward = torch.FloatTensor(reward).unsqueeze(1).to(self.device)
+        reward = torch.FloatTensor(reward).to(self.device)
         done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(self.device)
         expected_q_value = self.soft_q_net(state, action)
         expected_value = self.value_net(state)
