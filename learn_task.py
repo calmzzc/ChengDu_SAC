@@ -2,6 +2,7 @@ import sys, os
 import numpy as np
 import warnings
 import datetime
+import time
 import torch
 import random
 
@@ -31,7 +32,7 @@ class SACConfig:
         self.model_path = curr_path + "/outputs/" + self.env + '/' + curr_time + '/models/'  # path to save models
         self.train_eps = 10000
         self.train_steps = 500
-        self.eval_eps = 50
+        self.eval_eps = 30
         self.eval_steps = 500
         self.gamma = 0.99
         self.mean_lambda = 1e-3
@@ -106,7 +107,7 @@ def train(cfg, line, agent, train_model):
         while True:
             i_step += 1
             state_node.get_last_node(node_list)
-            #state_node.state_transition() # 一般动作转移
+            # state_node.state_transition() # 一般动作转移
             state_node.safe_state_transition()  # Shield动作转移
             # state_node.Mcts_State_Transition()  # Shield Mcts动作转移
             total_power = total_power + state_node.t_power + state_node.re_power
@@ -280,14 +281,20 @@ def eval(cfg, line, agent, train_model):
 if __name__ == "__main__":
     cfg = SACConfig()
     line, agent, train_model = env_agent_config(cfg, seed=2)
+    train_time_start = time.time()
     t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list = train(cfg, line, agent, train_model)
+    train_time_end = time.time()
+    train_time = train_time_end - train_time_start
     make_dir(cfg.result_path, cfg.model_path)
     agent.save(path=cfg.model_path)
     save_results(t_rewards, t_ma_rewards, tag='train', path=cfg.result_path)
     # 测试
     line, agent, train_mdoel = env_agent_config(cfg, seed=2)
     agent.load(path=cfg.model_path)
+    eval_time_start = time.time()
     rewards, ma_rewards, ev_list, et_list, ea_list, eval_ep_list, eacc_list = eval(cfg, line, agent, train_model)
+    eval_time_end = time.time()
+    eval_time = eval_time_end - eval_time_start
     save_results(rewards, ma_rewards, tag='eval', path=cfg.result_path)
 
     # 画图
@@ -304,3 +311,5 @@ if __name__ == "__main__":
     #                    path=cfg.result_path)
     plot_evalep_speed(ev_list, et_list, ea_list, eval_ep_list, eacc_list, tag="ep_eval", env=cfg.env, algo=cfg.algo,
                       path=cfg.result_path)
+    print("训练时间为{}".format(train_time))
+    print("计算时间为{}".format(eval_time / 30))
