@@ -158,21 +158,26 @@ def evalplot_speed(total_v_list, total_t_list, total_a_list, total_acc_list, tag
         if i % 6 == 0:
             a = np.array(total_v_list[i]).reshape(-1)
             b = np.array(total_t_list[i]).reshape(-1)
-            c = np.linspace(1, len(total_t_list[i]), len(total_t_list[i]))
+            c = np.linspace(1, len(total_t_list[i]) * 40, len(total_t_list[i]))
             ax1.plot3D(b, c, a)
     plt.legend((u'速度曲线',), loc="best", prop=chinese_font())
     if save:
         plt.savefig(path + f"{tag}_speed_profile_cn")
     plt.figure()
-    plt.plot(total_a_list[0])
+    plt.plot(total_a_list[1])
     plt.legend((u'动作曲线',), loc='best', prop=chinese_font())
     if save:
         plt.savefig(path + f"{tag}_action_cn")
     plt.figure()
-    plt.plot(total_acc_list[0])
+    plt.plot(total_acc_list[1])
     plt.legend((u'加速度曲线',), loc='best', prop=chinese_font())
     if save:
         plt.savefig(path + f"{tag}_acc_cn")
+    plt.figure()
+    plt.plot(total_v_list[1])
+    plt.legend((u'速度曲线',), loc='best', prop=chinese_font())
+    if save:
+        plt.savefig(path + f"{tag}_v_cn")
     plt.show()
 
 

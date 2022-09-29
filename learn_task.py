@@ -223,7 +223,7 @@ def eval(cfg, line, agent, train_model):
         while True:
             i_step += 1
             state_node.get_last_node(node_list)
-            # state_node.state_transition() # 一般动作转移
+            # state_node.state_transition() # 一般动作转移,使用一般动作转移时需要修改奖励函数中的超速检测
             state_node.safe_state_transition()  # Shield动作转移
             # state_node.Mcts_State_Transition()  # Shield Mcts动作转移
             total_power = total_power + state_node.t_power + state_node.re_power
@@ -280,7 +280,7 @@ def eval(cfg, line, agent, train_model):
 
 if __name__ == "__main__":
     cfg = SACConfig()
-    line, agent, train_model = env_agent_config(cfg, seed=19)
+    line, agent, train_model = env_agent_config(cfg, seed=2)
     train_time_start = time.time()
     t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list = train(cfg, line, agent, train_model)
     train_time_end = time.time()
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     agent.save(path=cfg.model_path)
     save_results(t_rewards, t_ma_rewards, tag='train', path=cfg.result_path)
     # 测试
-    line, agent, train_mdoel = env_agent_config(cfg, seed=19)
+    line, agent, train_mdoel = env_agent_config(cfg, seed=2)
     agent.load(path=cfg.model_path)
     eval_time_start = time.time()
     rewards, ma_rewards, ev_list, et_list, ea_list, eval_ep_list, eacc_list = eval(cfg, line, agent, train_model)
@@ -299,8 +299,8 @@ if __name__ == "__main__":
 
     # 画图
     plot_rewards_cn(t_rewards, t_ma_rewards, tag="train", env=cfg.env, algo=cfg.algo, path=cfg.result_path)  # 训练奖励
-    plot_power_cn(power_list, ma_power_list, tag="train", env=cfg.env, algo=cfg.algo, path=cfg.result_path)  # 训练净能耗
-    plot_unsafecounts_cn(unsafe_c, ma_unsafe_c, tag="train", env=cfg.env, algo=cfg.algo, path=cfg.result_path)  # 训练不安全次数
+    # plot_power_cn(power_list, ma_power_list, tag="train", env=cfg.env, algo=cfg.algo, path=cfg.result_path)  # 训练净能耗
+    # plot_unsafecounts_cn(unsafe_c, ma_unsafe_c, tag="train", env=cfg.env, algo=cfg.algo, path=cfg.result_path)  # 训练不安全次数
 
     plot_rewards_cn(rewards, ma_rewards, tag="eval", env=cfg.env, algo=cfg.algo, path=cfg.result_path)  # 测试奖励
 
@@ -309,7 +309,7 @@ if __name__ == "__main__":
 
     # plot_trainep_speed(v_list, t_list, a_list, ep_list, acc_list, tag="ep_train", env=cfg.env, algo=cfg.algo,
     #                    path=cfg.result_path)
-    plot_evalep_speed(ev_list, et_list, ea_list, eval_ep_list, eacc_list, tag="ep_eval", env=cfg.env, algo=cfg.algo,
-                      path=cfg.result_path)
+    # plot_evalep_speed(ev_list, et_list, ea_list, eval_ep_list, eacc_list, tag="ep_eval", env=cfg.env, algo=cfg.algo,
+    #                   path=cfg.result_path)
     print("训练时间为{}".format(train_time))
     print("计算时间为{}".format(eval_time / 30))

@@ -160,7 +160,7 @@ class Section8:
         # self.max_iteration = self.length / self.delta_distance
         self.scheduled_time = 172.1
         self.speed_limit = {
-            0: 100, 760: 140, 3832: 80, 4280: 0
+            0: 100, 760: 140, 3432: 80, 4280: 0
         }
         self.gradient = {
             0: 0, 255: 5.9, 2095: 0, 2995: 8.97, 3945: 0
