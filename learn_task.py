@@ -93,6 +93,8 @@ def train(cfg, line, agent, train_model):
         ep_reward = 0
         ep_unsafe_counts = 0  # 每一幕的不安全动作次数
         i_step = 1
+        limit_list = []
+        A_limit_list = []
         t_list = [0]
         v_list = [0]
         a_list = [np.array(0).reshape(1)]
@@ -119,6 +121,8 @@ def train(cfg, line, agent, train_model):
             v_list.append(state_node.next_state[1].copy())
             a_list.append(state_node.action.copy())
             acc_list.append(state_node.acc.copy())
+            limit_list.append(state_node.c_limit_speed / 3.6)
+            A_limit_list.append(state_node.a_limit_speed / 3.6)
 
             # Memory_Buffer存储
             agent.memory.push(state_node.state.copy(), state_node.action.copy(), state_node.current_reward.copy(),
@@ -137,6 +141,8 @@ def train(cfg, line, agent, train_model):
                 v_list.clear()
                 a_list.clear()
                 acc_list.clear()
+                limit_list.append(0)
+                A_limit_list.append(0)
                 break
 
             # 生成下一个新的节点
@@ -177,7 +183,7 @@ def train(cfg, line, agent, train_model):
         else:
             ma_rewards.append(ep_reward)
     print('完成训练！')
-    return rewards, ma_rewards, total_v_list, total_t_list, total_a_list, total_ep_list, total_power_list, ma_total_power_list, unsafe_counts, ma_unsafe_counts, total_acc_list, total_t_power_list, total_re_power_list
+    return rewards, ma_rewards, total_v_list, total_t_list, total_a_list, total_ep_list, total_power_list, ma_total_power_list, unsafe_counts, ma_unsafe_counts, total_acc_list, total_t_power_list, total_re_power_list, limit_list, A_limit_list
 
 
 def eval(cfg, line, agent, train_model):
@@ -282,7 +288,9 @@ if __name__ == "__main__":
     cfg = SACConfig()
     line, agent, train_model = env_agent_config(cfg, seed=2)
     train_time_start = time.time()
-    t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list = train(cfg, line, agent, train_model)
+    t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list, limit_list, A_limit_list = train(cfg, line,
+                                                                                                                                                                                                    agent,
+                                                                                                                                                                                                    train_model)
     train_time_end = time.time()
     train_time = train_time_end - train_time_start
     make_dir(cfg.result_path, cfg.model_path)
@@ -305,7 +313,7 @@ if __name__ == "__main__":
     plot_rewards_cn(rewards, ma_rewards, tag="eval", env=cfg.env, algo=cfg.algo, path=cfg.result_path)  # 测试奖励
 
     # plot_speed(v_list, t_list, a_list, acc_list, tag="op_train", env=cfg.env, algo=cfg.algo, path=cfg.result_path)
-    evalplot_speed(ev_list, et_list, ea_list, eacc_list, tag="op_eval", env=cfg.env, algo=cfg.algo, path=cfg.result_path)
+    evalplot_speed(ev_list, et_list, ea_list, eacc_list, limit_list, A_limit_list, tag="op_eval", env=cfg.env, algo=cfg.algo, path=cfg.result_path)
 
     # plot_trainep_speed(v_list, t_list, a_list, ep_list, acc_list, tag="ep_train", env=cfg.env, algo=cfg.algo,
     #                    path=cfg.result_path)

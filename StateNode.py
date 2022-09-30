@@ -35,6 +35,8 @@ class StateNode:
         self.speed_punish = 0  # 超速惩罚标志位
 
         self.current_limit_speed = 0  # 当前限速
+        self.c_limit_speed = float("inf")  # 用来画图
+        self.a_limit_speed = float("inf")  # ATP限速，用来画图
         self.ave_v = 0  # 本阶段平均速度
         self.p_indicator = -10  # 超速惩罚
 
@@ -74,9 +76,7 @@ class StateNode:
         final_locate = key_next // self.line.delta_distance
         length = final_locate - self.step
         if limit_speed_next < limit_speed:
-            self.ATP_limit = np.sqrt(limit_speed_next * limit_speed_next * 3.6 * 3.6 - 2 * self.train_model.max_bra_acc * length * self.line.delta_distance) / 3.6
-        else:
-            self.ATP_limit = self.ATP_limit
+            self.ATP_limit = np.sqrt(limit_speed_next * limit_speed_next / 3.6 / 3.6 - 2 * self.train_model.max_bra_acc * length * self.line.delta_distance) * 3.6
 
     def reshape_action(self):  # 重整动作
         if self.step <= 0.1 * self.max_step:
@@ -199,6 +199,8 @@ class StateNode:
             if key_list[j] <= self.step * self.line.delta_distance < key_list[j + 1]:
                 key = key_list[j]
         limit_speed = self.line.speed_limit[key]
+        self.c_limit_speed = self.line.speed_limit[key]
+        self.a_limit_speed = min(self.c_limit_speed, self.ATP_limit)
         if self.state[1] * 3.6 >= limit_speed:  # 超速
             self.speed_punish = 1
         else:
@@ -242,6 +244,7 @@ class StateNode:
         self.get_acc()
         if self.Shield_Check():
             self.get_safe_action()
+            self.reshape_action()
             self.get_acc()
         self.get_next_state()
         self.get_power()
@@ -275,7 +278,7 @@ class StateNode:
         initial_velocity = self.state[1].copy()
         while chaosu_flag != 1:
             xunhuan_count += 1
-            if xunhuan_count > 15:
+            if xunhuan_count > 30:
                 temp_acc = self.acc - self.g_acc - self.c_acc
                 if temp_acc >= 0:
                     self.action = temp_acc * self.train_model.weight / self.train_model.max_traction_force
@@ -286,7 +289,8 @@ class StateNode:
                 if self.action < -1:
                     self.action = np.array(-1).reshape(1)
                 break
-            temp_velocity = self.state[1]
+            # temp_velocity = self.state[1]
+            temp_velocity = initial_velocity
             temp_square_velocity = temp_velocity * temp_velocity + 2 * self.acc * self.line.delta_distance
             if temp_square_velocity <= 1:
                 temp_square_velocity = np.array(1).reshape(1)
@@ -350,7 +354,7 @@ class StateNode:
             if self.speed_punish:
                 unsafe_counts += 1
                 # self.current_reward = -1.5 * self.t_power - 1.5 * self.re_power - 0 * abs(1 * temp_time - (self.line.scheduled_time / (self.max_step + 1))) + self.p_indicator - 10 * self.comfort_punish
-                self.current_reward = -1 * self.t_power - 1 * self.re_power - 15 * abs(
+                self.current_reward = -4.3 * self.t_power - 4.3 * self.re_power - 15.5 * abs(
                     1 * temp_time - 1 * (abs(self.line.scheduled_time - self.state[0]) / (self.max_step + 1 - self.step))) + self.p_indicator - 10 * self.comfort_punish  # 当前step的运行时间和剩余距离平均时间的差值
                 # self.current_reward = -1.5 * self.t_power - 1.5 * self.re_power - abs(1 * (
                 #         2 * self.line.delta_distance * (self.max_step + 1 - self.step) / (abs(self.line.scheduled_time - self.state[0])) - self.state[
@@ -358,7 +362,7 @@ class StateNode:
             else:
                 unsafe_counts += 0
                 # self.current_reward = -1.5 * self.t_power - 1.5 * self.re_power - 0 * abs(1 * temp_time - (self.line.scheduled_time / (self.max_step + 1))) - 10 * self.comfort_punish
-                self.current_reward = -1 * self.t_power - 1 * self.re_power - 15 * abs(
+                self.current_reward = -4.3 * self.t_power - 4.3 * self.re_power - 15.5 * abs(
                     1 * temp_time - 1 * (abs(self.line.scheduled_time - self.state[0]) / (self.max_step + 1 - self.step))) - 10 * self.comfort_punish
                 # self.current_reward = -1.5 * self.t_power - 1.5 * self.re_power - abs(1 * (
                 #         2 * self.line.delta_distance * (self.max_step + 1 - self.step) / (abs(self.line.scheduled_time - self.state[0])) - self.state[

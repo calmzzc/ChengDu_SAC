@@ -148,7 +148,7 @@ def plot_speed(total_v_list, total_t_list, total_a_list, total_acc_list, tag="tr
     plt.show()
 
 
-def evalplot_speed(total_v_list, total_t_list, total_a_list, total_acc_list, tag="eval", env='Train Optimal', algo="DDPG", save=True,
+def evalplot_speed(total_v_list, total_t_list, total_a_list, total_acc_list, limit_list, A_limit_list, tag="eval", env='Train Optimal', algo="DDPG", save=True,
                    path='./'):
     # sns.set()
     plt.figure()
@@ -174,8 +174,10 @@ def evalplot_speed(total_v_list, total_t_list, total_a_list, total_acc_list, tag
     if save:
         plt.savefig(path + f"{tag}_acc_cn")
     plt.figure()
-    plt.plot(total_v_list[1])
-    plt.legend((u'速度曲线',), loc='best', prop=chinese_font())
+    plt.plot(np.linspace(1, len(total_v_list[1]) * 40, len(total_v_list[1])), total_v_list[1])
+    plt.plot(np.linspace(1, len(total_v_list[1]) * 40, len(total_v_list[1])), limit_list)
+    plt.plot(np.linspace(1, len(total_v_list[1]) * 40, len(total_v_list[1])), A_limit_list)
+    plt.legend((u'速度曲线', u'静态限速曲线', u'防护曲线'), loc='best', prop=chinese_font())
     if save:
         plt.savefig(path + f"{tag}_v_cn")
     plt.show()
