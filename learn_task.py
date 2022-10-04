@@ -10,7 +10,7 @@ from train_model import Train
 from agent import SAC
 from utils import save_results, make_dir
 from plot import plot_rewards_cn, plot_speed, evalplot_speed, plot_trainep_speed, plot_evalep_speed, \
-    plot_power_cn, plot_unsafecounts_cn
+    plot_power_cn, plot_unsafecounts_cn, draw_cum_prob_curve
 from line import Section, Section2
 from StateNode import StateNode
 from MctsStateNode import MctsStateNode
@@ -27,12 +27,12 @@ curr_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")  # 获取当前时
 class SACConfig:
     def __init__(self) -> None:
         self.algo = 'ChengDu_SAC'
-        self.env = 'Section8'
+        self.env = 'Section2'
         self.result_path = curr_path + "/outputs/" + self.env + '/' + curr_time + '/results/'  # path to save results
         self.model_path = curr_path + "/outputs/" + self.env + '/' + curr_time + '/models/'  # path to save models
         self.train_eps = 500
         self.train_steps = 500
-        self.eval_eps = 30
+        self.eval_eps = 500
         self.eval_steps = 500
         self.gamma = 0.99
         self.mean_lambda = 1e-3
@@ -200,6 +200,7 @@ def eval(cfg, line, agent, train_model):
     total_a_list = []  # 全部动作列表
     total_acc_list = []  # 全部加速度列表
     total_ep_list = []  # 全部幕数列表
+    cal_list = []
     # total_power_list = []  # 总净能耗列表（牵引-再生）
     # ma_total_power_list = []  # 滑动净能耗列表
     # total_t_power_list = []  # 总牵引能耗列表
@@ -226,6 +227,7 @@ def eval(cfg, line, agent, train_model):
         # Mcts要用下面这个
         # state_node = MctsStateNode(state, 0, line, agent, i_ep, train_flag, train_model, parent=None)
         node_list.append(state_node)
+        cal_time_start = time.time()
         while True:
             i_step += 1
             state_node.get_last_node(node_list)
@@ -242,6 +244,9 @@ def eval(cfg, line, agent, train_model):
             a_list.append(state_node.action.copy())
             acc_list.append(state_node.acc.copy())
             if done:
+                cal_time_end = time.time()
+                cal_time = cal_time_end - cal_time_start
+                cal_list.append(cal_time)
                 total_t_list.append(t_list.copy())
                 total_v_list.append(v_list.copy())
                 total_a_list.append(a_list.copy())
@@ -281,12 +286,12 @@ def eval(cfg, line, agent, train_model):
         else:
             ma_rewards.append(ep_reward)
     print('完成测试！')
-    return rewards, ma_rewards, total_v_list, total_t_list, total_a_list, total_ep_list, total_acc_list
+    return rewards, ma_rewards, total_v_list, total_t_list, total_a_list, total_ep_list, total_acc_list, cal_list
 
 
 if __name__ == "__main__":
     cfg = SACConfig()
-    line, agent, train_model = env_agent_config(cfg, seed=19)
+    line, agent, train_model = env_agent_config(cfg, seed=2)
     train_time_start = time.time()
     t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list, limit_list, A_limit_list = train(cfg, line,
                                                                                                                                                                                                     agent,
@@ -297,10 +302,10 @@ if __name__ == "__main__":
     agent.save(path=cfg.model_path)
     save_results(t_rewards, t_ma_rewards, tag='train', path=cfg.result_path)
     # 测试
-    line, agent, train_mdoel = env_agent_config(cfg, seed=19)
+    line, agent, train_mdoel = env_agent_config(cfg, seed=2)
     agent.load(path=cfg.model_path)
     eval_time_start = time.time()
-    rewards, ma_rewards, ev_list, et_list, ea_list, eval_ep_list, eacc_list = eval(cfg, line, agent, train_model)
+    rewards, ma_rewards, ev_list, et_list, ea_list, eval_ep_list, eacc_list, cal_list = eval(cfg, line, agent, train_model)
     eval_time_end = time.time()
     eval_time = eval_time_end - eval_time_start
     save_results(rewards, ma_rewards, tag='eval', path=cfg.result_path)
@@ -319,5 +324,6 @@ if __name__ == "__main__":
     #                    path=cfg.result_path)
     # plot_evalep_speed(ev_list, et_list, ea_list, eval_ep_list, eacc_list, tag="ep_eval", env=cfg.env, algo=cfg.algo,
     #                   path=cfg.result_path)
+    draw_cum_prob_curve(cal_list, bins=40, title="TEST", xlabel="DATA", tag="cal_time", path=cfg.result_path)
     print("训练时间为{}".format(train_time))
-    print("计算时间为{}".format(eval_time / 30))
+    print("计算时间为{}".format(eval_time / cfg.eval_eps))
