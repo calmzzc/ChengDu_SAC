@@ -5,13 +5,14 @@ import datetime
 import time
 import torch
 import random
+import pandas as pd
 
 from train_model import Train
 from agent import SAC
 from utils import save_results, make_dir
 from plot import plot_rewards_cn, plot_speed, evalplot_speed, plot_trainep_speed, plot_evalep_speed, \
     plot_power_cn, plot_unsafecounts_cn, draw_cum_prob_curve
-from line import Section, Section2
+from line import Section, SectionS, SectionX
 from StateNode import StateNode
 from MctsStateNode import MctsStateNode
 
@@ -27,9 +28,7 @@ curr_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")  # 获取当前时
 class SACConfig:
     def __init__(self) -> None:
         self.algo = 'ChengDu_SAC'
-        self.env = 'Section2'
-        self.result_path = curr_path + "/outputs/" + self.env + '/' + curr_time + '/results/'  # path to save results
-        self.model_path = curr_path + "/outputs/" + self.env + '/' + curr_time + '/models/'  # path to save models
+        self.env = 'Section9'
         self.train_eps = 500
         self.train_steps = 500
         self.eval_eps = 500
@@ -42,6 +41,9 @@ class SACConfig:
         self.value_lr = 3e-4
         self.soft_q_lr = 3e-4
         self.policy_lr = 3e-4
+        self.result_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.env + '/' + curr_time + '/results/'  # path to save results
+        self.model_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.env + '/' + curr_time + '/models/'  # path to save models
+        self.data_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.env + '/' + curr_time + '/data/'  # path to save data
         self.capacity = 1000000
         self.hidden_dim = 256
         self.batch_size = 128
@@ -95,6 +97,7 @@ def train(cfg, line, agent, train_model):
         i_step = 1
         limit_list = []
         A_limit_list = []
+        slope_list = []
         t_list = [0]
         v_list = [0]
         a_list = [np.array(0).reshape(1)]
@@ -123,6 +126,7 @@ def train(cfg, line, agent, train_model):
             acc_list.append(state_node.acc.copy())
             limit_list.append(state_node.c_limit_speed / 3.6)
             A_limit_list.append(state_node.a_limit_speed / 3.6)
+            slope_list.append(state_node.slope)
 
             # Memory_Buffer存储
             agent.memory.push(state_node.state.copy(), state_node.action.copy(), state_node.current_reward.copy(),
@@ -183,7 +187,7 @@ def train(cfg, line, agent, train_model):
         else:
             ma_rewards.append(ep_reward)
     print('完成训练！')
-    return rewards, ma_rewards, total_v_list, total_t_list, total_a_list, total_ep_list, total_power_list, ma_total_power_list, unsafe_counts, ma_unsafe_counts, total_acc_list, total_t_power_list, total_re_power_list, limit_list, A_limit_list
+    return rewards, ma_rewards, total_v_list, total_t_list, total_a_list, total_ep_list, total_power_list, ma_total_power_list, unsafe_counts, ma_unsafe_counts, total_acc_list, total_t_power_list, total_re_power_list, limit_list, A_limit_list, slope_list
 
 
 def eval(cfg, line, agent, train_model):
@@ -293,12 +297,13 @@ if __name__ == "__main__":
     cfg = SACConfig()
     line, agent, train_model = env_agent_config(cfg, seed=2)
     train_time_start = time.time()
-    t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list, limit_list, A_limit_list = train(cfg, line,
-                                                                                                                                                                                                    agent,
-                                                                                                                                                                                                    train_model)
+    t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list, limit_list, A_limit_list, slope_list = train(
+        cfg, line,
+        agent,
+        train_model)
     train_time_end = time.time()
     train_time = train_time_end - train_time_start
-    make_dir(cfg.result_path, cfg.model_path)
+    make_dir(cfg.result_path, cfg.model_path, cfg.data_path)
     agent.save(path=cfg.model_path)
     save_results(t_rewards, t_ma_rewards, tag='train', path=cfg.result_path)
     # 测试
@@ -327,3 +332,9 @@ if __name__ == "__main__":
     draw_cum_prob_curve(cal_list, bins=40, title="TEST", xlabel="DATA", tag="cal_time", path=cfg.result_path)
     print("训练时间为{}".format(train_time))
     print("计算时间为{}".format(eval_time / cfg.eval_eps))
+    output_excel = {'t_rewards': t_rewards, 't_ma_rewards': t_ma_rewards, 'rewards': rewards, 'ma_rewards': ma_rewards, 'ev_list': ev_list[1], 'et_list': et_list[1],
+                    'ea_list': ea_list[1],
+                    'eacc_list': eacc_list[1],
+                    'limit_list': limit_list, 'A_limit_list': A_limit_list, 'unsafe_c': unsafe_c, 'ma_unsafe_c': ma_unsafe_c, 'slope_list': slope_list}
+    output = pd.DataFrame.from_dict(output_excel, orient='index')
+    output.to_excel(cfg.data_path + 'data.xlsx', index=False)
