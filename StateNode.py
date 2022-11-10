@@ -280,7 +280,7 @@ class StateNode:
         initial_velocity = self.state[1].copy()
         while chaosu_flag != 1:
             xunhuan_count += 1
-            if xunhuan_count > 30:
+            if xunhuan_count > 50:
                 temp_acc = self.acc - self.g_acc - self.c_acc
                 if temp_acc >= 0:
                     self.action = temp_acc * self.train_model.weight / self.train_model.max_traction_force

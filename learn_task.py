@@ -28,7 +28,7 @@ curr_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")  # 获取当前时
 class SACConfig:
     def __init__(self) -> None:
         self.algo = 'ChengDu_SAC'
-        self.env = 'Section9'
+        self.env = 'Section16'
         self.train_eps = 500
         self.train_steps = 500
         self.eval_eps = 500
@@ -41,9 +41,14 @@ class SACConfig:
         self.value_lr = 3e-4
         self.soft_q_lr = 3e-4
         self.policy_lr = 3e-4
-        self.result_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.env + '/' + curr_time + '/results/'  # path to save results
-        self.model_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.env + '/' + curr_time + '/models/'  # path to save models
-        self.data_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.env + '/' + curr_time + '/data/'  # path to save data
+        self.shield = 0
+        if self.shield:
+            self.algo_n = "Shield"
+        else:
+            self.algo_n = "no_Shield"
+        self.result_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.algo_n + '/' + self.env + '/' + curr_time + '/results/'  # path to save results
+        self.model_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.algo_n + '/' + self.env + '/' + curr_time + '/models/'  # path to save models
+        self.data_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.algo_n + '/' + self.env + '/' + curr_time + '/data/'  # path to save data
         self.capacity = 1000000
         self.hidden_dim = 256
         self.batch_size = 128
@@ -112,8 +117,12 @@ def train(cfg, line, agent, train_model):
         while True:
             i_step += 1
             state_node.get_last_node(node_list)
+            if cfg.shield:
+                state_node.safe_state_transition()  # Shield动作转移
+            else:
+                state_node.state_transition()  # 一般动作转移
             # state_node.state_transition() # 一般动作转移
-            state_node.safe_state_transition()  # Shield动作转移
+            # state_node.safe_state_transition()  # Shield动作转移
             # state_node.Mcts_State_Transition()  # Shield Mcts动作转移
             total_power = total_power + state_node.t_power + state_node.re_power
             t_power += state_node.t_power
@@ -235,8 +244,12 @@ def eval(cfg, line, agent, train_model):
         while True:
             i_step += 1
             state_node.get_last_node(node_list)
+            if cfg.shield:
+                state_node.safe_state_transition()  # Shield动作转移
+            else:
+                state_node.state_transition()  # 一般动作转移
             # state_node.state_transition() # 一般动作转移,使用一般动作转移时需要修改奖励函数中的超速检测
-            state_node.safe_state_transition()  # Shield动作转移
+            # state_node.safe_state_transition()  # Shield动作转移
             # state_node.Mcts_State_Transition()  # Shield Mcts动作转移
             total_power = total_power + state_node.t_power + state_node.re_power
             t_power += state_node.t_power
@@ -329,9 +342,11 @@ if __name__ == "__main__":
     #                    path=cfg.result_path)
     # plot_evalep_speed(ev_list, et_list, ea_list, eval_ep_list, eacc_list, tag="ep_eval", env=cfg.env, algo=cfg.algo,
     #                   path=cfg.result_path)
-    draw_cum_prob_curve(cal_list, bins=40, title="TEST", xlabel="DATA", tag="cal_time", path=cfg.result_path)
+    draw_cum_prob_curve(cal_list, bins=40, xlabel="Calculation Time (s)", tag="cal_time", path=cfg.result_path)
     print("训练时间为{}".format(train_time))
     print("计算时间为{}".format(eval_time / cfg.eval_eps))
+
+    # 数据导出
     output_excel = {'t_rewards': t_rewards, 't_ma_rewards': t_ma_rewards, 'rewards': rewards, 'ma_rewards': ma_rewards, 'ev_list': ev_list[1], 'et_list': et_list[1],
                     'ea_list': ea_list[1],
                     'eacc_list': eacc_list[1],
