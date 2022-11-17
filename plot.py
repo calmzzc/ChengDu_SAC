@@ -16,6 +16,8 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib.ticker import FuncFormatter
 from matplotlib.pyplot import MultipleLocator
+from sklearn.preprocessing import MinMaxScaler
+from pandas import Series
 
 
 def chinese_font():
@@ -167,6 +169,9 @@ def evalplot_speed(total_v_list, total_t_list, total_a_list, total_acc_list, lim
     if save:
         plt.savefig(path + f"{tag}_speed_profile_cn")
     plt.figure(dpi=150)
+    serise = Series(total_a_list[1])
+    value = serise.values.reshape(len(serise), 1)
+    total_a_list[1] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(value)
     plt.plot(total_a_list[1])
     plt.legend((u'动作曲线',), loc='best', prop=chinese_font())
     if save:

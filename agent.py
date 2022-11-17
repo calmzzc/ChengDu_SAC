@@ -50,7 +50,7 @@ class SAC:
         done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(self.device)
         expected_q_value = self.soft_q_net(state, action)
         expected_value = self.value_net(state)
-        new_action, log_prob, z, mean, log_std = self.policy_net.evaluate(state)
+        new_action, log_prob, z, mean, log_std = self.policy_net.evaluate(state)  # 尝试在这里再加个Shield，对于SAC算法改变抽样时的最大上界
 
         target_value = self.target_value_net(next_state)
         next_q_value = reward + (1 - done) * gamma * target_value

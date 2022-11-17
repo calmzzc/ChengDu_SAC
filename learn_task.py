@@ -27,8 +27,8 @@ curr_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")  # 获取当前时
 
 class SACConfig:
     def __init__(self) -> None:
-        self.algo = 'ChengDu_SAC'
-        self.env = 'Section16'
+        self.algo = 'SAC_CD'
+        self.env = 'Section10'
         self.train_eps = 500
         self.train_steps = 500
         self.eval_eps = 500
@@ -41,7 +41,7 @@ class SACConfig:
         self.value_lr = 3e-4
         self.soft_q_lr = 3e-4
         self.policy_lr = 3e-4
-        self.shield = 0
+        self.shield = 1
         if self.shield:
             self.algo_n = "Shield"
         else:
@@ -64,7 +64,7 @@ def env_agent_config(cfg, seed=1):
     random.seed(seed)
     torch.backends.cudnn.deterministic = True
 
-    state_dim = 2
+    state_dim = 4
     action_dim = 1
     agent = SAC(state_dim, action_dim, cfg)
     train_model = Train()
@@ -92,9 +92,11 @@ def train(cfg, line, agent, train_model):
     node_list = []  # 节点列表
     for i_ep in range(cfg.train_eps):
         total_ep_list.append(i_ep)
-        state = np.zeros(2)
+        state = np.zeros(4)
         state[0] = np.array(0).reshape(1)
         state[1] = np.array(0).reshape(1)
+        state[2] = np.array(0).reshape(1)
+        state[3] = np.array(0).reshape(1)
         # ou_noise.reset()
         done = False
         ep_reward = 0
@@ -221,9 +223,11 @@ def eval(cfg, line, agent, train_model):
     node_list = []  # 节点列表
     for i_ep in range(cfg.eval_eps):
         total_ep_list.append(i_ep)
-        state = np.zeros(2)
+        state = np.zeros(4)
         state[0] = np.array(0).reshape(1)
         state[1] = np.array(0).reshape(1)
+        state[2] = np.array(0).reshape(1)
+        state[3] = np.array(0).reshape(1)
         # ou_noise.reset()
         done = False
         ep_reward = 0
@@ -308,7 +312,7 @@ def eval(cfg, line, agent, train_model):
 
 if __name__ == "__main__":
     cfg = SACConfig()
-    line, agent, train_model = env_agent_config(cfg, seed=2)
+    line, agent, train_model = env_agent_config(cfg, seed=10)
     train_time_start = time.time()
     t_rewards, t_ma_rewards, v_list, t_list, a_list, ep_list, power_list, ma_power_list, unsafe_c, ma_unsafe_c, acc_list, total_t_power_list, total_re_power_list, limit_list, A_limit_list, slope_list = train(
         cfg, line,
@@ -320,7 +324,7 @@ if __name__ == "__main__":
     agent.save(path=cfg.model_path)
     save_results(t_rewards, t_ma_rewards, tag='train', path=cfg.result_path)
     # 测试
-    line, agent, train_mdoel = env_agent_config(cfg, seed=2)
+    line, agent, train_mdoel = env_agent_config(cfg, seed=10)
     agent.load(path=cfg.model_path)
     eval_time_start = time.time()
     rewards, ma_rewards, ev_list, et_list, ea_list, eval_ep_list, eacc_list, cal_list = eval(cfg, line, agent, train_model)
@@ -352,4 +356,4 @@ if __name__ == "__main__":
                     'eacc_list': eacc_list[1],
                     'limit_list': limit_list, 'A_limit_list': A_limit_list, 'unsafe_c': unsafe_c, 'ma_unsafe_c': ma_unsafe_c, 'slope_list': slope_list}
     output = pd.DataFrame.from_dict(output_excel, orient='index')
-    output.to_excel(cfg.data_path + 'data.xlsx', index=False)
+    output.to_excel(cfg.data_path + '{}_data.xlsx'.format(cfg.algo_n + '_' + cfg.algo), index=False)
