@@ -43,7 +43,7 @@ class SACConfig:
         self.policy_lr = 3e-4
         self.shield = 1
         if self.shield:
-            self.algo_n = "Shield"
+            self.algo_n = "Shield_Mcts"
         else:
             self.algo_n = "no_Shield"
         self.result_path = curr_path + "/outputs/" + str(self.policy_lr) + '/' + self.algo_n + '/' + self.env + '/' + curr_time + '/results/'  # path to save results
@@ -112,15 +112,15 @@ def train(cfg, line, agent, train_model):
         total_power = 0
         t_power = 0
         re_power = 0
-        state_node = StateNode(state, 0, line, agent, i_ep, train_flag, train_model)
+        # state_node = StateNode(state, 0, line, agent, i_ep, train_flag, train_model)
         # Mcts要用下面这个
-        # state_node = MctsStateNode(state, 0, line, agent, i_ep, train_flag, train_model, parent=None)
+        state_node = MctsStateNode(state, 0, line, agent, i_ep, train_flag, train_model, parent=None)
         node_list.append(state_node)
         while True:
             i_step += 1
             state_node.get_last_node(node_list)
             if cfg.shield:
-                state_node.safe_state_transition()  # Shield动作转移
+                state_node.Mcts_State_Transition()  # Shield动作转移
             else:
                 state_node.state_transition()  # 一般动作转移
             # state_node.state_transition() # 一般动作转移
@@ -161,9 +161,9 @@ def train(cfg, line, agent, train_model):
                 break
 
             # 生成下一个新的节点
-            state_node = StateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model)
+            # state_node = StateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model)
             # Mcts要用下面这个
-            # state_node = MctsStateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model, parent=None)
+            state_node = MctsStateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model, parent=None)
             node_list.append(state_node)
         if (i_ep + 1) % 10 == 0:
             print('回合：{}/{}，奖励：{}, 能耗  {}, 牵引能耗  {}, 最终时间  {}, 最终速度  {}, 不安全次数  {}, 最终位置 {}'.format(i_ep + 1,
@@ -240,16 +240,16 @@ def eval(cfg, line, agent, train_model):
         total_power = 0
         t_power = 0
         re_power = 0
-        state_node = StateNode(state, 0, line, agent, i_ep, train_flag, train_model)
+        # state_node = StateNode(state, 0, line, agent, i_ep, train_flag, train_model)
         # Mcts要用下面这个
-        # state_node = MctsStateNode(state, 0, line, agent, i_ep, train_flag, train_model, parent=None)
+        state_node = MctsStateNode(state, 0, line, agent, i_ep, train_flag, train_model, parent=None)
         node_list.append(state_node)
         cal_time_start = time.time()
         while True:
             i_step += 1
             state_node.get_last_node(node_list)
             if cfg.shield:
-                state_node.safe_state_transition()  # Shield动作转移
+                state_node.Mcts_State_Transition()  # Shield动作转移
             else:
                 state_node.state_transition()  # 一般动作转移
             # state_node.state_transition() # 一般动作转移,使用一般动作转移时需要修改奖励函数中的超速检测
@@ -278,9 +278,9 @@ def eval(cfg, line, agent, train_model):
                 acc_list.clear()
                 break
             # 生成下一个新的节点
-            state_node = StateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model)
+            # state_node = StateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model)
             # Mcts要用下面这个
-            # state_node = MctsStateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model, parent=None)
+            state_node = MctsStateNode(state_node.next_state, i_step, line, agent, i_ep, train_flag, train_model, parent=None)
             node_list.append(state_node)
         print('回合：{}/{}，奖励：{}, 能耗  {}, 牵引能耗  {}, 最终时间  {}, 最终速度  {}, 不安全次数  {}, 最终位置 {}'.format(i_ep + 1,
                                                                                                 cfg.eval_eps,
