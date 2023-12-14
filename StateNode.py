@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 class StateNode:
@@ -15,6 +16,8 @@ class StateNode:
         self.g_acc = 0  # 坡度加速度
         self.c_acc = 0  # 曲率加速度
         self.action = np.array(0).reshape(1)  # 当前牵引制动力请求百分比
+        self.mean = None  # 这两个变量用来描述policy_net的分布
+        self.log_std = None
 
         self.step = step  # 当前阶段
         self.episode = episode  # 当前幕数
@@ -62,8 +65,13 @@ class StateNode:
 
     # 下面是动作的产生过程
     def get_action(self):  # 选择动作
-        self.action = self.agent.policy_net.get_action(self.state)
+        self.action, self.mean, self.log_std = self.agent.policy_net.get_action(self.state)
         self.action = np.array(self.action).reshape(1)
+        # if self.train_flag:
+        #     self.action, self.mean, self.log_std = self.agent.policy_net.get_action(self.state)
+        #     self.action = np.array(self.action).reshape(1)
+        # else:
+        #     self.action = np.round(self.agent.integrate_policy_net(torch.FloatTensor(self.state).unsqueeze(0).to(self.agent.device)).detach().cpu().numpy()[0, 0], 2)
 
     def get_ATP_limit(self):
         key_list = []
@@ -94,6 +102,7 @@ class StateNode:
         # 重整当前动作
         # self.action = low_bound + (self.action + 1.0) * 0.5 * (upper_bound - low_bound)
         self.action = np.clip(self.action, low_bound, upper_bound)
+        # self.action = np.round(self.action, 2)
         # 重整上一个节点的动作，这句话好像可以不要
         # self.last_node_action = low_bound + (self.last_node_action + 1.0) * 0.5 * (upper_bound - low_bound)
         # self.last_node_action = np.clip(self.last_node_action, low_bound, upper_bound)
@@ -281,6 +290,7 @@ class StateNode:
 
     # 获取安全动作的函数
     def get_safe_action(self):
+        self.shield_flag = 1
         xunhuan_count = 0
         chaosu_flag = 0
         initial_velocity = self.state[1].copy()

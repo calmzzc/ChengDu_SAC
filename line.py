@@ -6,7 +6,7 @@ class Section1:
         self.start_station = '''JiTouQiao'''  # 出发站
         self.end_station = '''BaiFuoQiao'''  # 到达站
         self.length = 1470  # 站间长度
-        self.delta_distance = 49  # 位置离散
+        self.delta_distance = 10  # 位置离散
         # self.max_iteration = self.length / self.delta_distance
         self.scheduled_time = 86  # 计划运行时间
         self.speed_limit = {  # 线路限速
@@ -27,7 +27,7 @@ class Section2:
         self.start_station = '''BaiFuoQiao'''
         self.end_station = '''JiuJiangBei'''
         self.length = 4180
-        self.delta_distance = 76
+        self.delta_distance = 20
         # self.max_iteration = self.length / self.delta_distance
         self.scheduled_time = 183.15
         self.speed_limit = {

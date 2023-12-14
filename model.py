@@ -111,4 +111,25 @@ class PolicyNet(nn.Module):
         action = torch.tanh(z)
 
         action = action.detach().cpu().numpy()
-        return action[0]
+        return action[0], mean, log_std
+
+
+class Actor(nn.Module):
+    def __init__(self, n_obs, output_dim, hidden_size, init_w=3e-3):
+        super(Actor, self).__init__()
+        self.linear1 = nn.Linear(n_obs, hidden_size)
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, output_dim)
+        self.linear4 = nn.Linear(hidden_size, hidden_size)
+
+        self.linear3.weight.data.uniform_(-init_w, init_w)
+        self.linear3.bias.data.uniform_(-init_w, init_w)
+
+    def forward(self, x):
+        # x = F.relu(self.bn1(self.linear1(x)))
+        # x = F.relu(self.bn2(self.linear2(x)))
+        x = F.relu(self.linear1(x))
+        x = F.relu(self.linear2(x))
+        x = F.relu(self.linear4(x))
+        x = torch.tanh(self.linear3(x))
+        return x

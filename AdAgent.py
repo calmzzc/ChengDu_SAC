@@ -18,7 +18,7 @@ from memory import ReplayBuffer
 from model import ValueNet, PolicyNet, SoftQNet, Actor
 
 
-class SAC:
+class AdSAC:
     def __init__(self, state_dim, action_dim, cfg) -> None:
         self.batch_size = cfg.batch_size
         self.memory = ReplayBuffer(cfg.capacity)
